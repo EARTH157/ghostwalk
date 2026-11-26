@@ -48,7 +48,7 @@ def _vec(v, n):
 
 def _pose(d):
     q = _vec(d["q"], 4)
-    n = math.sqrt(sum(c * c for c in q))
+    n = math.hypot(*q)
     if n < 1e-6:
         raise ValueError("zero quaternion")
     return Pose(_vec(d["p"], 3), tuple(c / n for c in q))
@@ -72,7 +72,7 @@ def parse_input(text: str) -> InputMsg:
         d = json.loads(text, parse_constant=_reject)
         (t,) = _vec([d["t"]], 1)
         return InputMsg(t, _pose(d["head"]), _hand(d["left"]), _hand(d["right"]))
-    except (KeyError, TypeError, AttributeError) as e:
+    except (KeyError, TypeError, AttributeError, OverflowError, RecursionError) as e:
         raise ValueError(f"malformed input: {e!r}") from e
 
 

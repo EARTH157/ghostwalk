@@ -38,3 +38,14 @@ def test_frame_roundtrip():
 
 def test_encode_jpeg_magic():
     assert encode_jpeg(np.zeros((480, 640, 3), np.uint8))[:2] == b"\xff\xd8"
+
+
+@pytest.mark.parametrize("bad", ["[" * 60000, VALID.replace('"t":1', '"t":1' + "0" * 400)])
+def test_parse_rejects_pathological(bad):
+    with pytest.raises(ValueError):
+        parse_input(bad)
+
+
+def test_parse_normalizes_huge_quaternion():
+    m = parse_input(VALID.replace('"q":[0,0,0,1]},"left"', '"q":[0,0,0,1e200]},"left"'))
+    assert m.head.q == (0.0, 0.0, 0.0, 1.0)
