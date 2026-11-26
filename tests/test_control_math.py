@@ -1,6 +1,7 @@
 import numpy as np
 
-from sim.control_math import HandTracker, clamp_reach, grip_targets, hand_target_in_base
+from sim.control_math import WRIST_OFFSET, HandTracker, clamp_reach, grip_targets, hand_target_in_base, wrist_q_in_base
+from sim.coords import quat_from_yaw
 from sim.protocol import Hand, Pose
 
 
@@ -16,10 +17,17 @@ def test_clamp_reach_keeps_near_target():
     assert np.allclose(clamp_reach(np.array([0.1,0,0]), np.zeros(3)), [0.1,0,0])
 def test_grip_half():
     assert np.allclose(grip_targets(0.5, np.zeros(2), np.ones(2)), [0.5,0.5])
+def test_wrist_q_identity_controller_gives_offset():
+    assert np.allclose(wrist_q_in_base(np.array([1.0, 0, 0, 0]), 0.0), WRIST_OFFSET)
+def test_wrist_q_removes_user_yaw():
+    assert np.allclose(wrist_q_in_base(quat_from_yaw(0.7), 0.7), WRIST_OFFSET)  # ผู้ใช้หันไป 0.7 rad ตอน recenter → เหมือนหันตรง
 def test_lost_tracking_holds_last_target():
-    tr = HandTracker(np.array([0.2, -0.2, 0.0]))
-    assert np.allclose(tr.update(None, np.zeros(3), 0.0, np.zeros(3), np.zeros(3)), [0.2, -0.2, 0])  # ยังไม่มีเป้า → ท่าเริ่มต้น
+    q0 = quat_from_yaw(0.3)
+    tr = HandTracker(np.array([0.2, -0.2, 0.0]), q0)
+    p, q = tr.update(None, np.zeros(3), 0.0, np.zeros(3), np.zeros(3))  # ยังไม่มีเป้า → ท่าเริ่มต้น
+    assert np.allclose(p, [0.2, -0.2, 0]) and np.allclose(q, q0)
     hand = Hand(Pose((0, 0, -0.3), (0, 0, 0, 1)), 0.0, (0, 0), False)  # WebXR -z = ข้างหน้า
-    first = tr.update(hand, np.zeros(3), 0.0, np.zeros(3), np.zeros(3))
-    assert np.allclose(first, [0.3, 0, 0])
-    assert np.allclose(tr.update(None, np.zeros(3), 0.0, np.zeros(3), np.zeros(3)), first)
+    p, q = tr.update(hand, np.zeros(3), 0.0, np.zeros(3), np.zeros(3))
+    assert np.allclose(p, [0.3, 0, 0]) and np.allclose(q, WRIST_OFFSET)
+    p2, q2 = tr.update(None, np.zeros(3), 0.0, np.zeros(3), np.zeros(3))
+    assert np.allclose(p2, p) and np.allclose(q2, q)

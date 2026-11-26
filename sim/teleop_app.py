@@ -90,11 +90,11 @@ try:
     shoulders = [robot.body_names.index(f"{s}_shoulder_pitch_link") for s in ("left", "right")]
     origin = env.scene.env_origins[0].cpu().numpy()
 
-    # base frame = pelvis position + pelvis yaw; wrists start at, and keep the orientation of, the asset's default pose
+    # base frame = pelvis position + pelvis yaw; wrists start at the asset's default pose
     bp = robot.data.body_link_pose_w.torch[0].cpu().numpy()
     to_base = quat_from_yaw(-yaw_of(to_wxyz(bp[pelvis, 3:7])))
-    trackers = [HandTracker(quat_rotate(to_base, bp[w, :3] - bp[pelvis, :3])) for w in wrists]
-    wrist_q = [quat_mul(to_base, to_wxyz(bp[w, 3:7])) for w in wrists]
+    trackers = [HandTracker(quat_rotate(to_base, bp[w, :3] - bp[pelvis, :3]), quat_mul(to_base, to_wxyz(bp[w, 3:7])))
+                for w in wrists]
     grip = [0.0, 0.0]
     stand = torch.tensor([[0.0, 0.0, 0.0, 0.72]], device=dev)  # walking policy, zero velocity (it cannot stand unactuated)
 
@@ -123,8 +123,8 @@ try:
         to_base, to_world = quat_from_yaw(-pyaw), quat_from_yaw(pyaw)
         robot_head = quat_rotate(to_base, raw - pp)
         ee = []
-        for tr, h, s, q in zip(trackers, ctrl, shoulders, wrist_q):
-            t = tr.update(h, user_head, recenter.yaw0, robot_head, quat_rotate(to_base, bp[s, :3] - pp))
+        for tr, h, s in zip(trackers, ctrl, shoulders):
+            t, q = tr.update(h, user_head, recenter.yaw0, robot_head, quat_rotate(to_base, bp[s, :3] - pp))
             ee += [pp - origin + quat_rotate(to_world, t), np.roll(quat_mul(to_world, q), -1)]
         grip = [h.trigger if h else g for h, g in zip(ctrl, grip)]  # keep the grip while tracking is lost
         ee.append(np.where(LEFT, grip_targets(grip[0], OPEN, CLOSED), grip_targets(grip[1], OPEN, CLOSED)))
