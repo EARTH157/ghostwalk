@@ -48,7 +48,7 @@ Spike code: `spike/m0_spike.py` (scene + walk + cameras + fps), `spike/sample_me
 
   - The open/closed values come from NVIDIA's `isaacteleop.retargeters.G1.TriHandMotionControllerRetargeter` (the Quest-controller mapping used by the G1 locomanip teleop) at trigger = squeeze = 0 (open) and trigger = squeeze = 1 (closed).
   - The left hand is the mirror (negation) of the right hand.
-  - Trigger alone curls index and thumb (thumb_0 = ∓0.5·trigger). Squeeze alone curls middle and thumb.
+  - Trigger alone curls index and thumb (thumb_0 = −0.5·trigger on both sides). Squeeze alone curls middle and thumb (thumb_0 = +0.5·squeeze), so thumb_0 is 0 with both pressed.
   - All values are inside the joint limits above, which were read from the sim.
 - **Head link:** there is no separate head body. The head is merged into **`torso_link`**, and the D435/head fixed links are merged too.
   - Spike cameras: prim `/World/envs/env_0/Robot/torso_link/cam_left|cam_right`
