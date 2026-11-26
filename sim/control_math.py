@@ -26,6 +26,16 @@ def grip_targets(trigger: float, open_q, closed_q):
     return open_q + trigger * (closed_q - open_q)
 
 
+def _deadzone(v, dz):
+    return 0.0 if abs(v) < dz else np.copysign((abs(v) - dz) / (1 - dz), v)
+
+
+def stick_to_velocity(left_stick, right_stick, deadzone=0.15, max_vx=0.6, max_vy=0.3, max_wz=1.0):
+    """WebXR sticks (forward = y < 0, right = x > 0) -> walking policy (vx, vy, wz) in the robot base frame."""
+    lx, ly = (_deadzone(v, deadzone) for v in left_stick)
+    return -ly * max_vx, -lx * max_vy, -_deadzone(right_stick[0], deadzone) * max_wz
+
+
 class HandTracker:
     """Holds the last wrist target (position, quat) while the controller is not tracked; starts at the asset's default."""
 

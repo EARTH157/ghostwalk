@@ -1,6 +1,7 @@
 import numpy as np
+import pytest
 
-from sim.control_math import WRIST_OFFSET, HandTracker, clamp_reach, grip_targets, hand_target_in_base, wrist_q_in_base
+from sim.control_math import WRIST_OFFSET, HandTracker, clamp_reach, grip_targets, hand_target_in_base, stick_to_velocity, wrist_q_in_base
 from sim.coords import quat_from_yaw
 from sim.protocol import Hand, Pose
 
@@ -31,3 +32,9 @@ def test_lost_tracking_holds_last_target():
     assert np.allclose(p, [0.3, 0, 0]) and np.allclose(q, WRIST_OFFSET)
     p2, q2 = tr.update(None, np.zeros(3), 0.0, np.zeros(3), np.zeros(3))
     assert np.allclose(p2, p) and np.allclose(q2, q)
+def test_push_forward_full():       assert stick_to_velocity((0,-1),(0,0)) == pytest.approx((0.6,0,0))
+def test_strafe_right_is_minus_y(): assert stick_to_velocity((1,0),(0,0)) == pytest.approx((0,-0.3,0))
+def test_turn_right_is_minus_wz():  assert stick_to_velocity((0,0),(1,0)) == pytest.approx((0,0,-1.0))
+def test_drift_inside_deadzone_is_zero(): assert stick_to_velocity((0.1,-0.14),(0.12,0)) == (0,0,0)
+def test_just_outside_deadzone_is_small():
+    assert 0 < stick_to_velocity((0,-0.2),(0,0))[0] < 0.05

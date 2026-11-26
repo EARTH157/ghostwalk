@@ -1,4 +1,5 @@
-"""G1 teleop in Isaac Lab: stereo head cameras follow the headset, arms and hands follow the controllers.
+"""G1 teleop in Isaac Lab: stereo head cameras follow the headset, arms and hands follow the controllers,
+thumbsticks drive the walking policy.
 
 Run: ~/IsaacLab/isaaclab.sh -p sim/teleop_app.py   (headless with cameras by default)
 """
@@ -27,7 +28,7 @@ from isaaclab_tasks.manager_based.locomanipulation.pick_place.locomanipulation_g
 )
 
 from sim.camera_math import Recenter, eye_poses, smooth
-from sim.control_math import HandTracker, grip_targets
+from sim.control_math import HandTracker, grip_targets, stick_to_velocity
 from sim.coords import quat_from_yaw, quat_mul, quat_rotate, xr_pos_to_isaac, xr_quat_to_isaac, yaw_of
 from sim.protocol import encode_jpeg
 from sim.server import TeleopServer
@@ -96,7 +97,6 @@ try:
     trackers = [HandTracker(quat_rotate(to_base, bp[w, :3] - bp[pelvis, :3]), quat_mul(to_base, to_wxyz(bp[w, 3:7])))
                 for w in wrists]
     grip = [0.0, 0.0]
-    stand = torch.tensor([[0.0, 0.0, 0.0, 0.72]], device=dev)  # walking policy, zero velocity (it cannot stand unactuated)
 
     recenter = Recenter()
     head_pos = None
@@ -114,7 +114,8 @@ try:
         bp = robot.data.body_link_pose_w.torch[0].cpu().numpy()
         tq = to_wxyz(bp[torso, 3:7])
         raw = bp[torso, :3] + quat_rotate(tq, HEAD_OFFSET)
-        head_pos = raw if head_pos is None else smooth(head_pos, raw, env.step_dt, tau=0.3)
+        # tau lags the eye v*tau behind the torso; 0.3 put it inside the head mesh when walking, 0.02 keeps it ~1 cm
+        head_pos = raw if head_pos is None else smooth(head_pos, raw, env.step_dt, tau=0.02)
         eyes = eye_poses(head_pos, yaw_of(tq), head_rel)
         for cam, (p, q) in zip(cams, eyes):
             cam.set_world_poses(p[None], np.roll(q, -1)[None], convention="world")
@@ -129,7 +130,9 @@ try:
         grip = [h.trigger if h else g for h, g in zip(ctrl, grip)]  # keep the grip while tracking is lost
         ee.append(np.where(LEFT, grip_targets(grip[0], OPEN, CLOSED), grip_targets(grip[1], OPEN, CLOSED)))
         arms = torch.tensor(np.concatenate(ee)[None], dtype=torch.float32, device=dev)
-        env.step(torch.cat([arms, stand], -1))
+        # no input or no hand -> that hand's axes are 0, so a stale/disconnected headset stops the robot
+        walk = stick_to_velocity(*(h.stick if h else (0.0, 0.0) for h in ctrl)) + (0.72,)  # hip_height, docs/milestone0.md
+        env.step(torch.cat([arms, torch.tensor([walk], dtype=torch.float32, device=dev)], -1))
 
         left, right = torch.stack([c.data.output["rgb"][0] for c in cams]).cpu().numpy()  # one readback
         server.publish_frame({"seq": seq, "head": head}, encode_jpeg(left), encode_jpeg(right))
