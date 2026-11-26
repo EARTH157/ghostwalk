@@ -41,7 +41,7 @@ IDENTITY = {"p": [0, 0, 0], "q": [0, 0, 0, 1]}
 LEFT = np.array([1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0], bool)
 OPEN = np.zeros(14)
 CLOSED = np.array([-1, -1, 0, 1, 1, 0, -1, -1, 0.4, 1, 1, -0.4, 0.7, -0.7])
-BOX_POS = (0.12, 0.27, 0.75)  # on the upstream packing table, in reach of the right hand (robot faces +y)
+BOX_POS = (0.12, 0.22, 0.75)  # R17: 5 cm in from the table top near edge (y 0.169), right of the pelvis (robot faces +y)
 
 
 def to_wxyz(q_xyzw):
@@ -114,8 +114,10 @@ try:
         bp = robot.data.body_link_pose_w.torch[0].cpu().numpy()
         tq = to_wxyz(bp[torso, 3:7])
         raw = bp[torso, :3] + quat_rotate(tq, HEAD_OFFSET)
-        # tau lags the eye v*tau behind the torso; 0.3 put it inside the head mesh when walking, 0.02 keeps it ~1 cm
-        head_pos = raw if head_pos is None else smooth(head_pos, raw, env.step_dt, tau=0.02)
+        # R18: horizontal lag (v*tau) puts the eye inside the head when walking, so x/y barely smoothed;
+        # z keeps tau 0.3 to damp the walking bob
+        head_pos = raw if head_pos is None else np.append(smooth(head_pos[:2], raw[:2], env.step_dt, tau=0.02),
+                                                          smooth(head_pos[2], raw[2], env.step_dt, tau=0.3))
         eyes = eye_poses(head_pos, yaw_of(tq), head_rel)
         for cam, (p, q) in zip(cams, eyes):
             cam.set_world_poses(p[None], np.roll(q, -1)[None], convention="world")
