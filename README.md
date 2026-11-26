@@ -104,7 +104,7 @@ To try the headset page without Isaac Sim, run `.venv/bin/python -m sim.fake_sim
 | Right A button | recenter the view (and re-zero wrist yaw) |
 | Head | looks around inside the robot's camera |
 
-Releasing the sticks stops the robot. So does losing the connection (within about half a second).
+Releasing the sticks stops the robot. So does losing the connection: the command drops to zero about 0.5 s after the headset disconnects, and the robot comes to rest about 2 s later on the wall clock (the sim runs at about 0.25x).
 
 ## How to test in the headset
 
@@ -113,7 +113,7 @@ Not done yet; this list is for the first session. Run `~/IsaacLab/isaaclab.sh -p
 1. **Pick up the box (first thing to try).** Walk to the table and try to lift the box. Keep your right hand raised while walking near the table: the default hand pose sits right above the box and sweeps it off if you walk backwards. Note whether the robot steps back when you reach down (it did headlessly).
 2. **View and stereo.** You see the scene from the robot's head and it has depth. Turning or tilting your head rotates the view the right way and does not lag. Press right A: the view faces the robot's front again. The log shows fps at or above about 12.
 3. **Arms, wrists and grip.** Reach forward, left/right, up/down: the robot's hand moves the same way. Turn and tilt a controller: the wrist turns the same way, and holding it naturally (pointing forward, upright) gives a grasp-ready hand. Squeeze the trigger: the hand closes. Put a controller down (tracking lost): the arm holds still without snapping. Reaching to the limit does not make the robot fall.
-4. **Walking, stop, disconnect.** Left stick walks forward, back and sideways the right way; the right stick turns the right way. Releasing the sticks stops the robot. Pull the USB cable while walking: the robot stops within about 0.5 s without falling. Walking with an arm reached out does not make it fall. Also note how far the stick must move before the robot starts (about 0.3) and any yaw drift when walking straight.
+4. **Walking, stop, disconnect.** Left stick walks forward, back and sideways the right way; the right stick turns the right way. Releasing the sticks stops the robot. Pull the USB cable while walking: the command drops to zero about 0.5 s later and the robot comes to rest about 2 s after that on the wall clock (sim at about 0.25x), without falling. Walking with an arm reached out does not make it fall. Also note any yaw drift when walking straight, and how small stick deflections feel: the code deadzone is 0.15, but the robot only visibly moves above roughly 0.3 deflection because the walking policy ignores very slow commands.
 5. **Sickness check.** Walk for 30 seconds: how dizzy do you feel? Vertical bob is damped and horizontal smoothing is light on purpose. Do not raise the x/y smoothing (`tau`) in `teleop_app.py` above about 0.05, or the eye trails into the robot's head. The view should not show the robot's own head while walking; looking down during a reach may show a shoulder.
 
 ## Known limits
