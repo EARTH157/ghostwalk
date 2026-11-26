@@ -49,3 +49,8 @@ def test_parse_rejects_pathological(bad):
 def test_parse_normalizes_huge_quaternion():
     m = parse_input(VALID.replace('"q":[0,0,0,1]},"left"', '"q":[0,0,0,1e200]},"left"'))
     assert m.head.q == (0.0, 0.0, 0.0, 1.0)
+
+
+def test_parse_rejects_overflowing_quaternion():
+    with pytest.raises(ValueError):
+        parse_input(VALID.replace('"q":[0,0,0,1]},"left"', '"q":[1e308,1e308,1e308,1e308]},"left"'))

@@ -49,7 +49,7 @@ def _vec(v, n):
 def _pose(d):
     q = _vec(d["q"], 4)
     n = math.hypot(*q)
-    if n < 1e-6:
+    if not math.isfinite(n) or n < 1e-6:
         raise ValueError("zero quaternion")
     return Pose(_vec(d["p"], 3), tuple(c / n for c in q))
 
