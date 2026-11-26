@@ -17,6 +17,7 @@ class TeleopServer:
         self._client = None
         self._pending = None
         self._busy = False
+        self._closing = None
         self._ready = threading.Event()
         self._thread = threading.Thread(target=lambda: asyncio.run(self._main()), daemon=True)
 
@@ -41,7 +42,7 @@ class TeleopServer:
 
     async def _main(self):
         self._loop, self._stop = asyncio.get_running_loop(), asyncio.Event()
-        async with serve(self._handle, self.host, self.port, max_size=65536):
+        async with serve(self._handle, self.host, self.port, max_size=65536, origins=["http://localhost:8000", None]):
             self._ready.set()
             await self._stop.wait()
 
@@ -66,7 +67,7 @@ class TeleopServer:
     async def _handle(self, ws):
         old, self._client, self._pending = self._client, ws, None
         if old is not None:
-            await old.close()
+            self._closing = asyncio.ensure_future(old.close())  # a silent old peer must not stall the new client
         try:
             async for msg in ws:
                 try:

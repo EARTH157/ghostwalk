@@ -18,7 +18,7 @@ Put on a Meta Quest 3S and walk a Unitree G1 humanoid around Isaac Sim. You see 
 Quest Browser (WebXR, JS)                    PC (Python, Isaac Lab, headless)
 ┌──────────────────────────┐  pose+input   ┌───────────────────────────────────┐
 │ head pose, controller    │ ───────────▶ │ thumbstick -> velocity -> walk policy│
-│ poses, trigger, sticks   │  JSON/WS      │ controller pose -> arm IK (+waist)   │
+│ poses, trigger, sticks   │  JSON/WS      │ controller pose -> arm IK           │
 │                          │               │ trigger -> G1 hand open/close        │
 │ draws left/right image   │ ◀─────────── │ virtual stereo camera at the head    │
 │ per eye, reprojected     │  JPEG L/R/WS  │                                       │
@@ -89,9 +89,16 @@ python3 -m http.server 8000 --bind 127.0.0.1 -d quest_web
 ~/IsaacLab/isaaclab.sh -p sim/teleop_app.py
 ```
 
-Then open `http://localhost:8000` in Meta Quest Browser and press **Enter VR**. The sim prints `fps ... pelvis_z ...` every 5 seconds. Stop it with Ctrl-C.
+Wait for the first `fps` log line from `teleop_app` (the scene build takes about 80 s and the view stays black until the first frame), then open `http://localhost:8000` in Meta Quest Browser and press **Enter VR**. The sim prints `fps ... pelvis_z ...` every 5 seconds. Stop it with Ctrl-C.
 
 To try the headset page without Isaac Sim, run `.venv/bin/python -m sim.fake_sim` in step 3: it sends a red "L" to the left eye and a blue "R" to the right and prints the poses it receives.
+
+## Test
+
+```bash
+.venv/bin/pytest -q
+node --test quest_web/*.test.mjs
+```
 
 ## Controls
 

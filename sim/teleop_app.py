@@ -77,8 +77,9 @@ for name in ("cam_left", "cam_right"):
 server = TeleopServer()
 server.start()  # R10: before the ~80 s scene build so a busy port fails fast
 print("teleop_app serving ws://127.0.0.1:8765", flush=True)
-env = ManagerBasedRLEnv(cfg)
+env = None
 try:
+    env = ManagerBasedRLEnv(cfg)
     # upstream AgileBasedLowerBodyAction passes a grad-tracking tensor to warp on CUDA; no_grad avoids it
     torch.set_grad_enabled(False)
     env.reset()
@@ -148,5 +149,6 @@ except KeyboardInterrupt:
     pass
 finally:
     server.stop()
-    env.close()
+    if env is not None:
+        env.close()
     app.close()
