@@ -136,6 +136,6 @@ Not done yet; this list is for the first session. Run `~/IsaacLab/isaaclab.sh -p
 
 ## License
 
-License: TBD.
+MIT — see [LICENSE](LICENSE). This covers the code in this repo only.
 
 NVIDIA's G1 asset and walking policy are not part of this repo and are not under its terms. They are fetched at runtime from NVIDIA's asset server and fall under the NVIDIA Isaac Sim Additional Software and Materials License. Do not redistribute them.
