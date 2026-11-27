@@ -67,7 +67,7 @@ You need a working Isaac Sim 6.0.1 and Isaac Lab 3.0.0 (`v3.0.0-beta2`) built fr
 The sim side runs inside Isaac Lab's Python, which already has numpy, Pillow and websockets. For the unit tests and `fake_sim` you need only a plain venv:
 
 ```bash
-git clone <this repo> ghostwalk && cd ghostwalk
+git clone https://github.com/EARTH157/ghostwalk.git && cd ghostwalk
 python3 -m venv .venv
 .venv/bin/pip install -r requirements-dev.txt
 ```
